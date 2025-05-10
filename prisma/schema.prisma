@@ -1,0 +1,50 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Note {
+  id          String    @id @default(cuid())
+  title       String
+  content     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  tags        Tag[]
+  
+  // Self-referential relationships for note linking
+  linkedToNotes     NoteLink[] @relation("LinkedToNotes")
+  linkedFromNotes   NoteLink[] @relation("LinkedFromNotes")
+  
+  // Parent-child relationship for nested notes
+  parentId    String?
+  parent      Note?    @relation("NoteHierarchy", fields: [parentId], references: [id])
+  children    Note[]   @relation("NoteHierarchy")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  notes     Note[]
+  createdAt DateTime @default(now())
+}
+
+model NoteLink {
+  id            String   @id @default(cuid())
+  fromNote      Note     @relation("LinkedFromNotes", fields: [fromNoteId], references: [id])
+  toNote        Note     @relation("LinkedToNotes", fields: [toNoteId], references: [id])
+  fromNoteId    String
+  toNoteId      String
+  createdAt     DateTime @default(now())
+
+  @@unique([fromNoteId, toNoteId])
+}
